@@ -1,0 +1,37 @@
+name: vreasy-test
+services:
+  php-apache:
+    build:
+      dockerfile: ./php-apache/Dockerfile
+      args:
+        XDEBUG_PORT: ${XDEBUG_PORT}
+    environment:
+      PHP_IDE_CONFIG: "serverName=${PHP_SERVER_NAME}"
+    tty: true
+    ports:
+      - ${HTTP_PORT}:80
+    volumes:
+      - ./php-apache/etc/apache2/sites-enabled/000-default.conf:/etc/apache2/sites-enabled/000-default.conf
+      - ../:/var/www/html
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - vreasy-network
+  mysql:
+    image: mysql:9
+    environment:
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - ${DB_PORT}:3306
+    volumes:
+      - vreasy-db:/var/lib/mysql
+      - ./mysql/etc/mysql/conf.d/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
+    networks:
+      - vreasy-network
+volumes:
+  vreasy-db:
+networks:
+  vreasy-network:
