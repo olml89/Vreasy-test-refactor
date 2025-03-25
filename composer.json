@@ -1,0 +1,21 @@
+{
+    "name": "olml89/vreasy-test-refactor",
+    "description": "Refactoring for learning purposes of an implementation of a test for Vreasy done in 2019",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Oleguer Mas"
+        }
+    ],
+    "minimum-stability": "dev",
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "require": {
+        "tempest/framework": "1.0-alpha.6",
+        "tempest/highlight": "2.11.4"
+    }
+}
