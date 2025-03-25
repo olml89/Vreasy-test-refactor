@@ -1,17 +1,22 @@
-DOCKER_COMPOSE = docker-compose -f docker/docker-compose.yml --env-file .env
+DOCKER_COMPOSE := -f docker/docker-compose.prod.yml
+ENV := --env-file .env
+
+.PHONY: dev
+dev:
+	$(eval override DOCKER_COMPOSE += -f docker/docker-compose.dev.yml)
 
 .PHONY: build
 build:
-	$(DOCKER_COMPOSE) build
+	docker-compose $(DOCKER_COMPOSE) $(ENV) build
 
 .PHONY: upd
 upd:
-	$(DOCKER_COMPOSE) -f docker/docker-compose.yml up -d --remove-orphans
+	docker-compose $(DOCKER_COMPOSE) $(ENV) up -d --build --remove-orphans
 
 .PHONY: down
 down:
-	$(DOCKER_COMPOSE) -f docker/docker-compose.yml down
+	docker-compose $(DOCKER_COMPOSE) $(ENV) down
 
 .PHONY: ssh
 ssh:
-	$(DOCKER_COMPOSE) -f docker/docker-compose.yml exec php-apache /bin/sh
+	docker-compose $(DOCKER_COMPOSE) $(ENV) exec php-fpm /bin/sh
