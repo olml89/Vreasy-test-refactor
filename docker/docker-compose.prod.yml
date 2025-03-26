@@ -30,7 +30,7 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
-      - ${DB_PORT}:3306
+      - ${MYSQL_PORT}:${DB_PORT}
     volumes:
       - vreasy-test-db:/var/lib/mysql
       - ./mysql/etc/mysql/conf.d/mysql.cnf:/etc/mysql/conf.d/mysql.cnf
