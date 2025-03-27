@@ -25,5 +25,12 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^12.1@dev"
+    },
+    "scripts": {
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "@php -r \"file_exists('.env.testing') || copy('.env.example', '.env.testing');\"",
+            "./bin/tempest database:testing:create --force"
+        ]
     }
 }
