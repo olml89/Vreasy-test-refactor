@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Shared\Integration;
 
 use App\Shared\EnvironmentLoader;
-use Tempest\Core\Environment;
+use Tempest\Core\AppConfig;
 use Tempest\Database\Transactions\TransactionManager;
 use Tempest\Framework\Testing\IntegrationTest;
 
@@ -17,8 +17,9 @@ abstract class IntegrationTestCase extends IntegrationTest
         $this->root = dirname(__DIR__, 3);
         parent::setUp();
 
-        // Overwrite needed environment variables
-        $this->container->get(EnvironmentLoader::class)->load(Environment::TESTING);
+        // Overwrite environment variables for the current environment if needed
+        $this->appConfig = $this->container->get(AppConfig::class);
+        $this->container->get(EnvironmentLoader::class)->load($this->appConfig->environment);
 
         // Prepare the database to run each test on atomic transactions
         $this->container->get(TransactionManager::class)->begin();

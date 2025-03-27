@@ -23,4 +23,8 @@
             <directory>src</directory>
         </include>
     </source>
+
+    <php>
+        <env name="ENVIRONMENT" value="testing"/>
+    </php>
 </phpunit>
