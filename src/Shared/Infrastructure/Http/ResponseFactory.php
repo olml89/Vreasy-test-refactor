@@ -8,9 +8,8 @@ use App\Shared\Domain\Entity;
 use App\Shared\Infrastructure\Http\Responses\Created;
 use App\Shared\Infrastructure\Http\Responses\ServerError;
 use App\Shared\Infrastructure\Http\Responses\UnprocessableEntity;
-use App\Shared\Infrastructure\Mapper\EntityToPresenterMapper;
+use App\Shared\Infrastructure\PresenterFactory;
 use Tempest\Core\AppConfig;
-use Tempest\Mapper\ObjectFactory;
 use Tempest\Router\Exceptions\NotFoundException;
 use Tempest\Router\Response;
 use Tempest\Router\Responses\NotFound;
@@ -20,18 +19,13 @@ use Throwable;
 final readonly class ResponseFactory
 {
     public function __construct(
-        private ObjectFactory $objectFactory,
+        private PresenterFactory $presenterFactory,
         private AppConfig $appConfig,
     ) {}
 
-    private function present(Entity $entity): array
-    {
-        return $this->objectFactory->with(EntityToPresenterMapper::class)->map($entity, 'array');
-    }
-
     public function created(Entity $entity): Created
     {
-        return new Created($this->present($entity));
+        return new Created($this->presenterFactory->present($entity));
     }
 
     public function unprocessableEntity(ValidationException $validationException): UnprocessableEntity
