@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\City;
+namespace App\Shared\Infrastructure\Mapper;
 
 use Tempest\Database\DatabaseModel;
 use Tempest\Database\Id;

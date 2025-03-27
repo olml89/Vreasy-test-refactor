@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\City;
+namespace App\City\Infrastructure\Http;
 
 use Tempest\Router\IsRequest;
 use Tempest\Router\Request;

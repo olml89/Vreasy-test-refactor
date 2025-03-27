@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Shared;
+namespace App\Shared\Infrastructure\Console;
 
+use App\Shared\Infrastructure\EnvironmentLoader;
 use PDOException;
 use Tempest\Console\Console;
 use Tempest\Console\ConsoleCommand;
@@ -19,7 +20,6 @@ use Tempest\Database\Connection\PDOConnection;
 use Tempest\Database\Exceptions\QueryException;
 use Tempest\Database\GenericDatabase;
 use Tempest\Database\Query;
-
 use Tempest\Database\Transactions\TransactionManagerInitializer;
 
 use function Tempest\env;

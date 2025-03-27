@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Shared\Integration;
 
-use App\Shared\EnvironmentLoader;
+use App\Shared\Infrastructure\EnvironmentLoader;
 use Tempest\Core\AppConfig;
 use Tempest\Database\Transactions\TransactionManager;
 use Tempest\Framework\Testing\IntegrationTest;

@@ -2,29 +2,28 @@
 
 declare(strict_types=1);
 
-namespace App\City;
+namespace App\City\Infrastructure\Http;
 
-use Ramsey\Uuid\Uuid;
+use App\City\Application\CreateCity;
+use App\Shared\Infrastructure\Http\ResponseFactory;
 use Tempest\Router\Post;
 use Tempest\Router\Response;
 
 final readonly class CreateCityController
 {
     public function __construct(
+        private CreateCity $createCity,
         private ResponseFactory $responseFactory,
     ) {}
 
     #[Post('/cities')]
     public function __invoke(CreateCityRequest $request): Response
     {
-        $city = new City(
-            uuid: Uuid::uuid4()->toString(),
+        $city = $this->createCity->create(
             name: $request->name,
             latitude: $request->latitude,
             longitude: $request->longitude,
         );
-
-        $city->save();
 
         return $this->responseFactory->created($city);
     }

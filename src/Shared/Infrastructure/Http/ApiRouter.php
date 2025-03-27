@@ -2,9 +2,8 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Http;
+namespace App\Shared\Infrastructure\Http;
 
-use App\City\ResponseFactory;
 use Psr\Http\Message\ServerRequestInterface as PsrRequest;
 use Tempest\Router\Exceptions\InvalidRouteException;
 use Tempest\Router\GenericRouter;

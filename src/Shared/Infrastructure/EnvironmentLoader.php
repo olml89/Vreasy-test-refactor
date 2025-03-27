@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Shared;
+namespace App\Shared\Infrastructure;
 
 use Dotenv\Dotenv;
 use Tempest\Core\Environment;

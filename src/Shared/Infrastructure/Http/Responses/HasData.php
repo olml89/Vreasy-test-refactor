@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Shared\Http\Responses;
+namespace App\Shared\Infrastructure\Http\Responses;
 
 /**
  * @mixin JsonResponse

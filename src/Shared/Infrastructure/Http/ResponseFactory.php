@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace App\City;
+namespace App\Shared\Infrastructure\Http;
 
-use App\Shared\Http\Responses\Created;
-use App\Shared\Http\Responses\ServerError;
-use App\Shared\Http\Responses\UnprocessableEntity;
+use App\Shared\Domain\Entity;
+use App\Shared\Infrastructure\Http\Responses\Created;
+use App\Shared\Infrastructure\Http\Responses\ServerError;
+use App\Shared\Infrastructure\Http\Responses\UnprocessableEntity;
+use App\Shared\Infrastructure\Mapper\EntityToPresenterMapper;
 use Tempest\Core\AppConfig;
-use Tempest\Database\DatabaseModel;
 use Tempest\Mapper\ObjectFactory;
 use Tempest\Router\Exceptions\NotFoundException;
 use Tempest\Router\Response;
@@ -23,14 +24,14 @@ final readonly class ResponseFactory
         private AppConfig $appConfig,
     ) {}
 
-    private function present(DatabaseModel $model): array
+    private function present(Entity $entity): array
     {
-        return $this->objectFactory->with(ModelToPresenterMapper::class)->map($model, 'array');
+        return $this->objectFactory->with(EntityToPresenterMapper::class)->map($entity, 'array');
     }
 
-    public function created(DatabaseModel $model): Created
+    public function created(Entity $entity): Created
     {
-        return new Created($this->present($model));
+        return new Created($this->present($entity));
     }
 
     public function unprocessableEntity(ValidationException $validationException): UnprocessableEntity

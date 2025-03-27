@@ -8,7 +8,8 @@ declare(strict_types=1);
  */
 namespace Database\Migrations;
 
-use App\City\City;
+use App\City\Infrastructure\Database\CityModel;
+use App\City\Infrastructure\Database\TempestCityRepository;
 use Tempest\Database\DatabaseMigration;
 use Tempest\Database\QueryStatement;
 use Tempest\Database\QueryStatements\CreateTableStatement;
@@ -18,9 +19,13 @@ final class CreateCityTable implements DatabaseMigration
 {
     private(set) string $name = '2025-03-25_16:25:00_create_city_table';
 
+    public function __construct(
+        private readonly TempestCityRepository $cityRepository,
+    ) {}
+
     public function up(): ?QueryStatement
     {
-        return CreateTableStatement::forModel(City::class)
+        return new CreateTableStatement($this->cityRepository->tableName()->tableName)
             ->primary()
             ->varchar('uuid', length: 36)->unique()
             ->varchar('name', length: 100)->unique()
@@ -33,6 +38,6 @@ final class CreateCityTable implements DatabaseMigration
 
     public function down(): ?QueryStatement
     {
-        return DropTableStatement::forModel(City::class);
+        return DropTableStatement::forModel(CityModel::class);
     }
 }

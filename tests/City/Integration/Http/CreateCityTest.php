@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\City\Integration\Http;
 
-use App\City\City;
-use App\City\CreateCityController;
+use App\City\Domain\CityRepository;
+use App\City\Infrastructure\Database\InMemoryCityRepository;
+use App\City\Infrastructure\Http\CreateCityController;
 use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Ramsey\Uuid\Uuid;
 use Tempest\Http\Status;
 use Tests\Shared\Integration\Http\TestsApiEndpoint;
 use Tests\Shared\Integration\IntegrationTestCase;
@@ -16,6 +18,16 @@ use Tests\Shared\Integration\IntegrationTestCase;
 final class CreateCityTest extends IntegrationTestCase
 {
     use TestsApiEndpoint;
+
+    private readonly CityRepository $cityRepository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->container->singleton(CityRepository::class, new InMemoryCityRepository());
+        $this->cityRepository = $this->container->get(CityRepository::class);
+    }
 
     private static function cityData(mixed $name = null, mixed $latitude = null, mixed $longitude = null): array
     {
@@ -131,13 +143,19 @@ final class CreateCityTest extends IntegrationTestCase
             );
 
         $this->assertNotNull(
-            City::query()->whereField('uuid', $response->body['data']['uuid'])->first()
+            $this->cityRepository->find(Uuid::fromString($response->body['data']['uuid']))
         );
 
         $this->assertResponseData(
             response: $response,
             status: Status::CREATED,
-            body: $cityData,
+            body: [
+                'name' => $cityData['name'],
+                'geolocation' => [
+                    'latitude' => $cityData['latitude'],
+                    'longitude' => $cityData['longitude'],
+                ],
+            ],
         );
     }
 }
