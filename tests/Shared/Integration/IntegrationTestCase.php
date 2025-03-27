@@ -31,8 +31,5 @@ abstract class IntegrationTestCase extends IntegrationTest
         $this->container->get(TransactionManager::class)->rollback();
 
         parent::tearDown();
-
-        restore_error_handler();
-        restore_exception_handler();
     }
 }

@@ -22,6 +22,9 @@ final readonly class ModelToPresenterMapper implements Mapper
         return $from instanceof DatabaseModel && $to === 'array';
     }
 
+    /**
+     * This serializes objects into arrays but preserving the scalar values instead of converting them to strings.
+     */
     public function map(mixed $from, mixed $to): array
     {
         $mappedProperties = [];
