@@ -11,6 +11,7 @@ use PHPUnit\Framework\Attributes\CoversMethod;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Ramsey\Uuid\Uuid;
 use Tempest\Http\Status;
+use Tests\City\CityFactory;
 use Tests\Shared\Integration\Http\TestsApiEndpoint;
 use Tests\Shared\Integration\IntegrationTestCase;
 
@@ -129,6 +130,35 @@ final class CreateCityTest extends IntegrationTestCase
         $this
             ->assertResponseError($response, Status::UNPROCESSABLE_CONTENT)
             ->assertFieldError($response, $invalidField, $errorMessage);
+    }
+
+    public static function provideAlreadyExistingCityData(): array
+    {
+        return [
+            'already existing name' => [
+                self::cityData(latitude: 10.0, longitude: 20.0),
+            ],
+            'already existing geolocation' => [
+                self::cityData(name: 'Different name'),
+            ],
+        ];
+    }
+
+    #[DataProvider('provideAlreadyExistingCityData')]
+    public function testItReturnsConflictIfCityAlreadyExists(array $alreadyExistingCityData): void
+    {
+        $cityData = self::cityData();
+        $city = CityFactory::create($cityData['name'], $cityData['latitude'], $cityData['longitude']);
+        $this->cityRepository->save($city);
+
+        $response = $this
+            ->http
+            ->post(
+                uri: '/cities',
+                body: $alreadyExistingCityData,
+            );
+
+        $response->assertStatus(Status::CONFLICT);
     }
 
     public function testItReturnsCreatedIfCityIsCreated(): void

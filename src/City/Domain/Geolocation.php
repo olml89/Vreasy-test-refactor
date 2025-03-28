@@ -22,6 +22,11 @@ final readonly class Geolocation implements JsonSerializable
         }
     }
 
+    public function equals(Geolocation $geolocation): bool
+    {
+        return $this->latitude === $geolocation->latitude && $this->longitude === $geolocation->longitude;
+    }
+
     public function jsonSerialize(): array
     {
         return [

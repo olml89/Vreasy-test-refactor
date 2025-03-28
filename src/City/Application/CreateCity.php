@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\City\Application;
 
 use App\City\Domain\City;
+use App\City\Domain\DuplicatedCityException;
 use App\City\Domain\CityFactory;
+use App\City\Domain\CityName;
+use App\City\Domain\CityAlreadyExistsSpecification;
 use App\City\Domain\CityRepository;
+use App\City\Domain\Geolocation;
 
 final readonly class CreateCity
 {
@@ -17,7 +21,14 @@ final readonly class CreateCity
 
     public function create(string $name, float $latitude, float $longitude): City
     {
-        $city = $this->cityFactory->create($name, $latitude, $longitude);
+        $cityName = new CityName($name);
+        $geolocation = new Geolocation($latitude, $longitude);
+
+        if ($this->cityRepository->exists(new CityAlreadyExistsSpecification($cityName, $geolocation))) {
+            throw new DuplicatedCityException($cityName, $geolocation);
+        }
+
+        $city = $this->cityFactory->create($cityName, $geolocation);
         $this->cityRepository->save($city);
 
         return $city;

@@ -11,37 +11,41 @@ use function Tempest\Support\arr;
 
 /**
  * @mixin JsonResponse
+ * @mixin ErrorJsonResponse
  */
 trait HasErrors
 {
-    protected function genericErrorMessage(): string
+    private readonly Throwable $throwable;
+
+    public function getGenericErrorMessage(): ?string
     {
-        return $this->status->description();
+        return $this->throwable->getMessage();
     }
 
-    public function setErrorInformation(?Throwable $e = null, bool $isDebug = false): self
+    public function setErrorInformation(bool $isDebug = false): self
     {
         $this->body = [
             ...($this->body ?? []),
-            ...$this->getContextualInformationFromException($e, $isDebug)
+            ...$this->getContextualInformationFromException($isDebug)
         ];
 
         return $this;
     }
 
-    private function getContextualInformationFromException(?Throwable $e, bool $isDebug): array
+    private function getContextualInformationFromException(bool $isDebug): array
     {
-        return !$isDebug || is_null($e) ? ['message' => $this->genericErrorMessage()] : [
-            'message' => $e->getMessage(),
-            'code' => $e->getCode(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-            'trace' => arr($e->getTrace())
-                ->filter(fn (array $trace): bool => array_key_exists('file', $trace))
-                ->map(fn (array $trace): array => array_diff_key($trace, array_flip(['args'])))
-                ->values()
-                ->toArray(),
-        ];
+        return !$isDebug ? ['message' => $this->getGenericErrorMessage()] :
+            [
+                'message' => $this->throwable->getMessage(),
+                'code' => $this->throwable->getCode(),
+                'file' => $this->throwable->getFile(),
+                'line' => $this->throwable->getLine(),
+                'trace' => arr($this->throwable->getTrace())
+                    ->filter(fn (array $trace): bool => array_key_exists('file', $trace))
+                    ->map(fn (array $trace): array => array_diff_key($trace, array_flip(['args'])))
+                    ->values()
+                    ->toArray(),
+            ];
     }
 
     public function addFieldError(string $field, Rule $failedRule): self

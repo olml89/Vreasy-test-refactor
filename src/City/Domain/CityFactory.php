@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 namespace App\City\Domain;
 
-use Ramsey\Uuid\Uuid;
+use App\Shared\Domain\UuidGenerator;
 
-final class CityFactory
+final readonly class CityFactory
 {
-    public function create(string $name, float $latitude, float $longitude): City
+    public function __construct(
+        private UuidGenerator $uuidGenerator,
+    ) {}
+
+    public function create(CityName $cityName, Geolocation $geolocation): City
     {
         return new City(
-            uuid: Uuid::uuid4(),
-            name: new CityName($name),
-            geolocation: new Geolocation($latitude, $longitude),
+            uuid: $this->uuidGenerator->random(),
+            name:$cityName,
+            geolocation: $geolocation,
         );
     }
 }

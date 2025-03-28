@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Shared\Infrastructure\Http;
 
 use App\Shared\Domain\Entity;
+use App\Shared\Domain\DuplicatedEntityException;
+use App\Shared\Infrastructure\Http\Responses\Conflict;
 use App\Shared\Infrastructure\Http\Responses\Created;
 use App\Shared\Infrastructure\Http\Responses\ServerError;
 use App\Shared\Infrastructure\Http\Responses\UnprocessableEntity;
@@ -28,6 +30,11 @@ final readonly class ResponseFactory
         return new Created($this->presenterFactory->present($entity));
     }
 
+    public function conflict(DuplicatedEntityException $duplicatedEntityException): Conflict
+    {
+        return new Conflict($duplicatedEntityException, $this->shouldDebugException());
+    }
+
     public function unprocessableEntity(ValidationException $validationException): UnprocessableEntity
     {
         return new UnprocessableEntity($validationException);
@@ -43,6 +50,7 @@ final readonly class ResponseFactory
         return match (true) {
             $throwable instanceof NotFoundException => new NotFound(),
             $throwable instanceof ValidationException => $this->unprocessableEntity($throwable),
+            $throwable instanceof DuplicatedEntityException => $this->conflict($throwable),
             default => $this->serverError($throwable),
         };
     }

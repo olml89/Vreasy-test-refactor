@@ -7,13 +7,14 @@ namespace App\Shared\Infrastructure\Http\Responses;
 use Tempest\Http\Status;
 use Tempest\Validation\Exceptions\ValidationException;
 
-final class UnprocessableEntity extends JsonResponse
+final class UnprocessableEntity extends JsonResponse implements ErrorJsonResponse
 {
     use HasErrors;
 
     public function __construct(ValidationException $validationException)
     {
         parent::__construct(Status::UNPROCESSABLE_CONTENT);
+        $this->throwable = $validationException;
 
         $this->setErrorInformation();
 
@@ -24,7 +25,7 @@ final class UnprocessableEntity extends JsonResponse
         }
     }
 
-    protected function genericErrorMessage(): string
+    public function getGenericErrorMessage(): string
     {
         return 'Validation error';
     }

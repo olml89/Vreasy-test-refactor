@@ -4,23 +4,25 @@ declare(strict_types=1);
 
 namespace App\Shared\Infrastructure\Mapper;
 
+use App\Shared\Domain\Entity;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionObject;
-use ReflectionProperty;
 use Tempest\Database\DatabaseModel;
 use Tempest\Mapper\CasterFactory;
 use Tempest\Mapper\Mapper;
-use Tempest\Reflection\PropertyReflector;
 
 final readonly class ModelToEntityMapper implements Mapper
 {
+    use IsPropertyMapper;
+
     public function __construct(
         private CasterFactory $casterFactory,
     ) {}
+
     public function canMap(mixed $from, mixed $to): bool
     {
-        return $from instanceof DatabaseModel;
+        return $from instanceof DatabaseModel && is_string($to) && is_a($to, Entity::class, allow_string: true);
     }
 
     /**
@@ -32,51 +34,97 @@ final readonly class ModelToEntityMapper implements Mapper
     {
         $modelReflectionObject = new ReflectionObject($from);
         $entityReflectionClass = new ReflectionClass($to);
-        $entityInstance = $entityReflectionClass->newInstanceWithoutConstructor();
+
+        /** @var Entity $entity */
+        $entity = $entityReflectionClass->newInstanceWithoutConstructor();
 
         foreach ($entityReflectionClass->getProperties() as $entityReflectionProperty) {
             if (!$entityReflectionProperty->isPublic()) {
                 continue;
             }
 
-            if ($this->setPropertyIfSettable($from, $modelReflectionObject, $entityReflectionProperty, $entityInstance)) {
-                //continue;
+            $entityPropertyWrapper = new EntityPropertyWrapper($entityReflectionProperty, $entity);
+
+            if ($modelReflectionObject->hasProperty($entityReflectionProperty->getName())) {
+                $modelReflectionProperty = $modelReflectionObject->getProperty($entityReflectionProperty->getName());
+                $modelPropertyWrapper = new ModelPropertyWrapper($modelReflectionProperty, $from);
+                $this->assignPropertyValue($entityPropertyWrapper, $modelPropertyWrapper);
+
+                continue;
             }
+
+            foreach ($modelReflectionObject->getProperties() as $modelReflectionProperty) {
+                $modelPropertyWrapper = new ModelPropertyWrapper($modelReflectionProperty, $from);
+
+                if ($this->mapPropertyByAttribute($entityPropertyWrapper, $modelPropertyWrapper)) {
+                    continue 2;
+                }
+
+                if ($this->mapPropertyByNamingConvention($entityPropertyWrapper, $modelPropertyWrapper)) {
+                    continue 2;
+                }
+            }
+
+            $this->mapPropertiesToValueObject($entityPropertyWrapper, $modelReflectionObject, $from);
         }
 
-        return $entityInstance;
+        return $entity;
+    }
+
+    private function assignPropertyValue(
+        EntityPropertyWrapper $entityPropertyWrapper,
+        ModelPropertyWrapper $modelPropertyWrapper,
+    ): void {
+        $value = $entityPropertyWrapper->hasSameType($modelPropertyWrapper)
+            ? $modelPropertyWrapper->getValue()
+            : $modelPropertyWrapper->cast($this->casterFactory, $entityPropertyWrapper);
+
+        $entityPropertyWrapper->setValue($value);
     }
 
     /**
      * @throws ReflectionException
      */
-    private function setPropertyIfSettable(
-        DatabaseModel $from,
+    public function mapPropertiesToValueObject(
+        EntityPropertyWrapper $entityPropertyWrapper,
         ReflectionObject $modelReflectionObject,
-        ReflectionProperty $entityReflectionProperty,
-        object $entityInstance,
-    ): bool {
-        if (!$modelReflectionObject->hasProperty($entityReflectionProperty->getName())) {
-            return false;
+        DatabaseModel $model,
+    ): void {
+        if (!$entityPropertyWrapper->classExists()) {
+            return;
         }
 
-        $modelReflectionProperty = $modelReflectionObject->getProperty($entityReflectionProperty->getName());
+        $valueObjectReflectionClass = new ReflectionClass($entityPropertyWrapper->property()->getType()->getName());
+        $valueObject = $valueObjectReflectionClass->newInstanceWithoutConstructor();
 
-        $entityReflectionProperty->setValue(
-            $entityInstance,
-            $this->getCastedValue($from, $modelReflectionProperty, $entityReflectionProperty)
-        );
+        foreach ($modelReflectionObject->getProperties() as $modelReflectionProperty) {
+            $modelPropertyWrapper = new ModelPropertyWrapper($modelReflectionProperty, $model);
 
-        return true;
-    }
+            if (is_null($valueObjectResolverAttribute = $this->getValueObjectResolverAttribute($modelPropertyWrapper))) {
+                continue;
+            }
 
-    private function getCastedValue(DatabaseModel $from, ReflectionProperty $modelReflectionProperty, ReflectionProperty $entityReflectionProperty): mixed
-    {
-        $value = $modelReflectionProperty->getValue($from);
+            $valueObjectClassName = $valueObjectResolverAttribute->getArguments()['className'] ?? null;
+            $valueObjectPropertyName = $valueObjectResolverAttribute->getArguments()['propertyName'] ?? null;
 
-        return $this
-            ->casterFactory
-            ->forProperty(new PropertyReflector($entityReflectionProperty))
-            ?->cast($value) ?? $value;
+            if (!$entityPropertyWrapper->isClass($valueObjectClassName)) {
+                continue;
+            }
+
+            if (!$valueObjectReflectionClass->hasProperty($valueObjectPropertyName)) {
+                continue;
+            }
+
+            $valueObjectReflectionProperty = $valueObjectReflectionClass->getProperty($valueObjectPropertyName);
+
+            if (!$modelPropertyWrapper->hasSameType($valueObjectReflectionProperty)) {
+                continue;
+            }
+
+            $value = $modelPropertyWrapper->getValue();
+            $valueObjectReflectionProperty->setValue($valueObject, $value);
+        }
+
+        $entityPropertyWrapper->setValue($valueObject);
     }
 }
