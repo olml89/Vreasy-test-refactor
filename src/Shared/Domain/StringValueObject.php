@@ -13,6 +13,11 @@ abstract readonly class StringValueObject implements JsonSerializable, Stringabl
         protected string $name,
     ) {}
 
+    public static function from(?string $value): ?static
+    {
+        return is_null($value) ? null : new static($value);
+    }
+
     public function equals(StringValueObject $stringValueObject): bool
     {
         return $this->value() === $stringValueObject->value();
