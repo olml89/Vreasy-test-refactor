@@ -7,6 +7,8 @@ namespace App\Shared\Infrastructure\Http;
 use App\Shared\Domain\Entity;
 use App\Shared\Domain\DuplicatedEntityException;
 use App\Shared\Domain\EntityNotFoundException;
+use App\Shared\Domain\ValueObjectException;
+use App\Shared\Infrastructure\Http\Responses\BadRequest;
 use App\Shared\Infrastructure\Http\Responses\Conflict;
 use App\Shared\Infrastructure\Http\Responses\Created;
 use App\Shared\Infrastructure\Http\Responses\NoContent;
@@ -42,6 +44,11 @@ final readonly class ResponseFactory
         return new NoContent();
     }
 
+    public function badRequest(ValueObjectException $exception): BadRequest
+    {
+        return new BadRequest($exception, $this->shouldDebugException());
+    }
+
     public function notFound(EntityNotFoundException $exception): NotFound
     {
         return new NotFound($exception, $this->shouldDebugException());
@@ -67,6 +74,7 @@ final readonly class ResponseFactory
         return match (true) {
             $throwable instanceof EntityNotFoundException => $this->notFound($throwable),
             $throwable instanceof ValidationException => $this->unprocessableEntity($throwable),
+            $throwable instanceof ValueObjectException => $this->badRequest($throwable),
             $throwable instanceof DuplicatedEntityException => $this->conflict($throwable),
             default => $this->serverError($throwable),
         };

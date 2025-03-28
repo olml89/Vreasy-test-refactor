@@ -4,7 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\City\Integration\Http;
 
+use App\City\Domain\City;
+use App\City\Domain\CityName;
 use App\City\Domain\CityRepository;
+use App\City\Domain\DuplicatedCityException;
+use App\City\Domain\Geolocation;
+use App\City\Domain\GeolocationValidator;
+use App\City\Domain\InvalidGeolocationException;
 use App\City\Infrastructure\Database\InMemoryCityRepository;
 use App\City\Infrastructure\Http\UpdateCityController;
 use PHPUnit\Framework\Attributes\CoversMethod;
@@ -12,6 +18,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Ramsey\Uuid\Uuid;
 use Tempest\Http\Status;
 use Tests\City\CityFactory;
+use Tests\City\Integration\FakeGeolocationValidator;
 use Tests\Shared\Integration\Http\TestsApiEndpoint;
 use Tests\Shared\Integration\IntegrationTestCase;
 
@@ -27,6 +34,8 @@ final class UpdateCityTest extends IntegrationTestCase
         parent::setUp();
 
         $this->container->singleton(CityRepository::class, new InMemoryCityRepository());
+        $this->container->singleton(GeolocationValidator::class, new FakeGeolocationValidator());
+
         $this->cityRepository = $this->container->get(CityRepository::class);
     }
 
@@ -135,23 +144,106 @@ final class UpdateCityTest extends IntegrationTestCase
             ->assertFieldError($response, $invalidField, $errorMessage);
     }
 
+    public function testItReturnsBadRequestIfGeolocationValidatorFails(): void
+    {
+        $this->container->singleton(
+            GeolocationValidator::class,
+            new FakeGeolocationValidator(throwException: true)
+        );
+
+        $city = CityFactory::create();
+        $this->cityRepository->save($city);
+        $cityData = self::cityData();
+
+        $response = $this
+            ->http
+            ->patch(
+                uri: sprintf(
+                    '/cities/%s',
+                    $city->uuid,
+                ),
+                body: $cityData,
+            );
+
+        $this->assertResponseError(
+            response: $response,
+            status: Status::BAD_REQUEST,
+            message: new InvalidGeolocationException(
+                Geolocation::from($cityData['latitude'], $cityData['longitude']),
+                CityName::from($cityData['name'])
+            )->getMessage(),
+        );
+    }
+
+    public function testItReturnsConflictIfCityUpdateDataIsDuplicated(): void
+    {
+        $city1 = CityFactory::create();
+        $city2 = CityFactory::create(name: 'Different name', latitude: -1.03, longitude: 15.856);
+        $this->cityRepository->save($city1);
+        $this->cityRepository->save($city2);
+
+        $response = $this
+            ->http
+            ->patch(
+                uri: sprintf(
+                    '/cities/%s',
+                    $city2->uuid,
+                ),
+                body: [
+                    'name' => (string)$city1->name,
+                    'latitude' => $city1->geolocation->latitude,
+                    'longitude' => $city1->geolocation->longitude,
+                ],
+            );
+
+        $this->assertResponseError(
+            response: $response,
+            status: Status::CONFLICT,
+            message: new DuplicatedCityException(
+                $city1->name,
+                $city1->geolocation,
+            )->getMessage(),
+        );
+    }
+
     public static function provideValidCityData(): array
     {
         return [
             'unmodified data' => [
-                self::cityData(),
+                CityFactory::create(),
+                [],
+            ],
+            'original data' => [
+                $city = CityFactory::create(),
+                [
+                    'name' => (string)$city->name,
+                    'latitude' => $city->geolocation->latitude,
+                    'longitude' => $city->geolocation->longitude,
+                ],
             ],
             'modified data' => [
-                self::cityData(name: 'Different name', latitude: -1.03, longitude: 15.856)
+                CityFactory::create(),
+                [
+                    'name' => 'Different name',
+                    'latitude' => -1.03,
+                    'longitude' => 15.856,
+                ],
             ],
         ];
     }
 
     #[DataProvider('provideValidCityData')]
-    public function testItReturns200IfCityIsCreated(array $updateCityData): void
+    public function testItReturns200IfCityIsUpdated(City $city, array $updateCityData): void
     {
-        $city = CityFactory::create();
         $this->cityRepository->save($city);
+
+        $expectedCityData = count($updateCityData) > 0
+            ? $updateCityData
+            : [
+                'name' => (string)$city->name,
+                'latitude' => $city->geolocation->latitude,
+                'longitude' => $city->geolocation->longitude,
+            ];
 
         $response = $this
             ->http
@@ -163,19 +255,19 @@ final class UpdateCityTest extends IntegrationTestCase
                 body: $updateCityData,
             );
 
-        $this->assertEquals($updateCityData['name'], $city->name);
-        $this->assertEquals($updateCityData['latitude'], $city->geolocation->latitude);
-        $this->assertEquals($updateCityData['longitude'], $city->geolocation->longitude);
+        $this->assertEquals($expectedCityData['name'], $city->name);
+        $this->assertEquals($expectedCityData['latitude'], $city->geolocation->latitude);
+        $this->assertEquals($expectedCityData['longitude'], $city->geolocation->longitude);
 
         $this->assertResponseData(
             response: $response,
             status: Status::OK,
             body: [
                 'uuid' => (string) $city->uuid,
-                'name' => $updateCityData['name'],
+                'name' => $expectedCityData['name'],
                 'geolocation' => [
-                    'latitude' => $updateCityData['latitude'],
-                    'longitude' => $updateCityData['longitude'],
+                    'latitude' => $expectedCityData['latitude'],
+                    'longitude' => $expectedCityData['longitude'],
                 ],
             ]
         );

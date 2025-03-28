@@ -106,7 +106,8 @@ abstract readonly class TempestRepository
      */
     protected function saveEntity(Entity $entity): void
     {
-        $model = $this->entityToModelMapper->map($entity, static::getModelClassName());
+        // Check if the current record exists before creating it.
+        $model = $this->findModel($entity->uuid) ?? $this->entityToModelMapper->map($entity, static::getModelClassName());
         $model->save();
     }
 }

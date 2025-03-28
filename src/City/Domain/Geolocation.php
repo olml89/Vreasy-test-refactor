@@ -6,8 +6,9 @@ namespace App\City\Domain;
 
 use InvalidArgumentException;
 use JsonSerializable;
+use Stringable;
 
-final readonly class Geolocation implements JsonSerializable
+final readonly class Geolocation implements JsonSerializable, Stringable
 {
     public function __construct(
         public float $latitude,
@@ -38,5 +39,10 @@ final readonly class Geolocation implements JsonSerializable
             'latitude' => $this->latitude,
             'longitude' => $this->longitude,
         ];
+    }
+
+    public function __toString(): string
+    {
+        return sprintf('geolocation(latitude:%s, longitude:%s)', $this->latitude, $this->longitude);
     }
 }

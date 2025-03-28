@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\City\Integration\Http;
 
+use App\City\Domain\CityName;
 use App\City\Domain\CityRepository;
+use App\City\Domain\DuplicatedCityException;
+use App\City\Domain\Geolocation;
+use App\City\Domain\GeolocationValidator;
+use App\City\Domain\InvalidGeolocationException;
 use App\City\Infrastructure\Database\InMemoryCityRepository;
 use App\City\Infrastructure\Http\CreateCityController;
 use PHPUnit\Framework\Attributes\CoversMethod;
@@ -12,6 +17,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use Ramsey\Uuid\Uuid;
 use Tempest\Http\Status;
 use Tests\City\CityFactory;
+use Tests\City\Integration\FakeGeolocationValidator;
 use Tests\Shared\Integration\Http\TestsApiEndpoint;
 use Tests\Shared\Integration\IntegrationTestCase;
 
@@ -27,6 +33,8 @@ final class CreateCityTest extends IntegrationTestCase
         parent::setUp();
 
         $this->container->singleton(CityRepository::class, new InMemoryCityRepository());
+        $this->container->singleton(GeolocationValidator::class, new FakeGeolocationValidator());
+
         $this->cityRepository = $this->container->get(CityRepository::class);
     }
 
@@ -132,6 +140,32 @@ final class CreateCityTest extends IntegrationTestCase
             ->assertFieldError($response, $invalidField, $errorMessage);
     }
 
+    public function testItReturnsBadRequestIfGeolocationValidatorFails(): void
+    {
+        $this->container->singleton(
+            GeolocationValidator::class,
+            new FakeGeolocationValidator(throwException: true)
+        );
+
+        $cityData = self::cityData();
+
+        $response = $this
+            ->http
+            ->post(
+                uri: '/cities',
+                body: $cityData,
+            );
+
+        $this->assertResponseError(
+            response: $response,
+            status: Status::BAD_REQUEST,
+            message: new InvalidGeolocationException(
+                Geolocation::from($cityData['latitude'], $cityData['longitude']),
+                CityName::from($cityData['name'])
+            )->getMessage(),
+        );
+    }
+
     public static function provideAlreadyExistingCityData(): array
     {
         return [
@@ -161,12 +195,10 @@ final class CreateCityTest extends IntegrationTestCase
         $this->assertResponseError(
             response: $response,
             status: Status::CONFLICT,
-            message: sprintf(
-                'City already exists with name %s or gelocation(latitude=%s, longitude=%s)',
-                $alreadyExistingCityData['name'],
-                $alreadyExistingCityData['latitude'],
-                $alreadyExistingCityData['longitude'],
-            ),
+            message: new DuplicatedCityException(
+                CityName::from($alreadyExistingCityData['name']),
+                Geolocation::from($alreadyExistingCityData['latitude'], $alreadyExistingCityData['longitude']),
+            )->getMessage(),
         );
     }
 

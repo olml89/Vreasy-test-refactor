@@ -12,10 +12,9 @@ final class DuplicatedCityException extends DuplicatedEntityException
     {
         parent::__construct(
             message: sprintf(
-                'City already exists with name %s or gelocation(latitude=%s, longitude=%s)',
+                'City already exists with name %s or %s',
                 $cityName,
-                $geolocation->latitude,
-                $geolocation->longitude,
+                $geolocation,
             ),
         );
     }
