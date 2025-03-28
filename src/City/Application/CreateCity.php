@@ -19,16 +19,13 @@ final readonly class CreateCity
         private CityRepository $cityRepository,
     ) {}
 
-    public function create(string $name, float $latitude, float $longitude): City
+    public function create(CityName $name, Geolocation $geolocation): City
     {
-        $cityName = new CityName($name);
-        $geolocation = new Geolocation($latitude, $longitude);
-
-        if ($this->cityRepository->exists(new DuplicatedCitySpecification($cityName, $geolocation))) {
-            throw new DuplicatedCityException($cityName, $geolocation);
+        if ($this->cityRepository->exists(new DuplicatedCitySpecification($name, $geolocation))) {
+            throw new DuplicatedCityException($name, $geolocation);
         }
 
-        $city = $this->cityFactory->create($cityName, $geolocation);
+        $city = $this->cityFactory->create($name, $geolocation);
         $this->cityRepository->save($city);
 
         return $city;

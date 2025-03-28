@@ -7,6 +7,7 @@ namespace App\City\Infrastructure\Http;
 use App\City\Application\GetCity;
 use App\Shared\Infrastructure\Http\ResponseFactory;
 use App\Shared\Infrastructure\Http\Responses\Ok;
+use Ramsey\Uuid\UuidInterface;
 use Tempest\Router\Get;
 
 final readonly class GetCityController
@@ -17,7 +18,7 @@ final readonly class GetCityController
     ) {}
 
     #[Get(uri: '/cities/{uuid}')]
-    public function __invoke(string $uuid): Ok
+    public function __invoke(UuidInterface $uuid): Ok
     {
         $city = $this->getCity->get($uuid);
 

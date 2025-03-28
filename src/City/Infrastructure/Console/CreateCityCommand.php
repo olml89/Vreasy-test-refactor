@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\City\Infrastructure\Console;
 
 use App\City\Application\CreateCity;
+use App\City\Domain\CityName;
+use App\City\Domain\Geolocation;
 use App\Shared\Infrastructure\PresenterFactory;
 use Tempest\Console\Console;
 use Tempest\Console\ConsoleCommand;
@@ -23,7 +25,10 @@ final readonly class CreateCityCommand
     )]
     public function __invoke(string $name, float $latitude, float $longitude): void
     {
-        $city = $this->createCity->create($name, $latitude, $longitude);
+        $city = $this->createCity->create(
+            name: new CityName($name),
+            geolocation: new Geolocation(latitude: $latitude, longitude: $longitude),
+        );
 
         $this->console->success('City has been created');
         $this->console->writeln((string) $this->presenterFactory->present($city));

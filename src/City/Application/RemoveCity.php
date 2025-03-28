@@ -6,21 +6,19 @@ namespace App\City\Application;
 
 use App\City\Domain\CityNotFoundException;
 use App\City\Domain\CityRepository;
-use App\Shared\Domain\UuidGenerator;
+use Ramsey\Uuid\UuidInterface;
 
 final readonly class RemoveCity
 {
     public function __construct(
-        private UuidGenerator $uuidGenerator,
         private CityRepository $repository,
     ) {}
 
     /**
      * @throws CityNotFoundException
      */
-    public function remove(string $uuid): void
+    public function remove(UuidInterface $uuid): void
     {
-        $uuid = $this->uuidGenerator->fromString($uuid);
         $city = $this->repository->findOrFail($uuid);
 
         $this->repository->remove($city);
