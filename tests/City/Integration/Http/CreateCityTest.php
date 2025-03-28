@@ -158,7 +158,16 @@ final class CreateCityTest extends IntegrationTestCase
                 body: $alreadyExistingCityData,
             );
 
-        $response->assertStatus(Status::CONFLICT);
+        $this->assertResponseError(
+            response: $response,
+            status: Status::CONFLICT,
+            message: sprintf(
+                'City already exists with name %s or gelocation(latitude=%s, longitude=%s)',
+                $alreadyExistingCityData['name'],
+                $alreadyExistingCityData['latitude'],
+                $alreadyExistingCityData['longitude'],
+            ),
+        );
     }
 
     public function testItReturnsCreatedIfCityIsCreated(): void

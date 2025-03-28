@@ -11,14 +11,13 @@ final class UnprocessableEntity extends JsonResponse implements ErrorJsonRespons
 {
     use HasErrors;
 
-    public function __construct(ValidationException $validationException)
+    public function __construct(ValidationException $throwable)
     {
         parent::__construct(Status::UNPROCESSABLE_CONTENT);
-        $this->throwable = $validationException;
 
-        $this->setErrorInformation();
+        $this->setErrorInformation($throwable);
 
-        foreach ($validationException->failingRules as $field => $rules) {
+        foreach ($throwable->failingRules as $field => $rules) {
             foreach ($rules as $rule) {
                 $this->addFieldError($field, $rule);
             }

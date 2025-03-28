@@ -11,12 +11,11 @@ final class ServerError extends JsonResponse implements ErrorJsonResponse
 {
     use HasErrors;
 
-    public function __construct(Throwable $e, bool $isDebug)
+    public function __construct(Throwable $throwable, bool $isDebug)
     {
         parent::__construct(Status::INTERNAL_SERVER_ERROR);
-        $this->throwable = $e;
 
-        $this->setErrorInformation($isDebug);
+        $this->setErrorInformation($throwable, $isDebug);
     }
 
     public function getGenericErrorMessage(): string

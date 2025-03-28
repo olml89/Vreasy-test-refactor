@@ -14,4 +14,9 @@ final class RamseyUuidGenerator implements UuidGenerator
     {
         return Uuid::uuid4();
     }
+
+    public function fromString(string $uuid): UuidInterface
+    {
+        return Uuid::fromString($uuid);
+    }
 }

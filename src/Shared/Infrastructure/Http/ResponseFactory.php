@@ -6,15 +6,16 @@ namespace App\Shared\Infrastructure\Http;
 
 use App\Shared\Domain\Entity;
 use App\Shared\Domain\DuplicatedEntityException;
+use App\Shared\Domain\EntityNotFoundException;
 use App\Shared\Infrastructure\Http\Responses\Conflict;
 use App\Shared\Infrastructure\Http\Responses\Created;
+use App\Shared\Infrastructure\Http\Responses\NotFound;
+use App\Shared\Infrastructure\Http\Responses\Ok;
 use App\Shared\Infrastructure\Http\Responses\ServerError;
 use App\Shared\Infrastructure\Http\Responses\UnprocessableEntity;
 use App\Shared\Infrastructure\PresenterFactory;
 use Tempest\Core\AppConfig;
-use Tempest\Router\Exceptions\NotFoundException;
 use Tempest\Router\Response;
-use Tempest\Router\Responses\NotFound;
 use Tempest\Validation\Exceptions\ValidationException;
 use Throwable;
 
@@ -25,19 +26,29 @@ final readonly class ResponseFactory
         private AppConfig $appConfig,
     ) {}
 
+    public function ok(Entity $entity): Ok
+    {
+        return new Ok($this->presenterFactory->present($entity));
+    }
+
     public function created(Entity $entity): Created
     {
         return new Created($this->presenterFactory->present($entity));
     }
 
-    public function conflict(DuplicatedEntityException $duplicatedEntityException): Conflict
+    public function notFound(EntityNotFoundException $exception): NotFound
     {
-        return new Conflict($duplicatedEntityException, $this->shouldDebugException());
+        return new NotFound($exception, $this->shouldDebugException());
     }
 
-    public function unprocessableEntity(ValidationException $validationException): UnprocessableEntity
+    public function conflict(DuplicatedEntityException $exception): Conflict
     {
-        return new UnprocessableEntity($validationException);
+        return new Conflict($exception, $this->shouldDebugException());
+    }
+
+    public function unprocessableEntity(ValidationException $exception): UnprocessableEntity
+    {
+        return new UnprocessableEntity($exception);
     }
 
     public function serverError(Throwable $throwable): ServerError
@@ -48,7 +59,7 @@ final readonly class ResponseFactory
     public function mapToResponse(Throwable $throwable): Response
     {
         return match (true) {
-            $throwable instanceof NotFoundException => new NotFound(),
+            $throwable instanceof EntityNotFoundException => $this->notFound($throwable),
             $throwable instanceof ValidationException => $this->unprocessableEntity($throwable),
             $throwable instanceof DuplicatedEntityException => $this->conflict($throwable),
             default => $this->serverError($throwable),

@@ -8,6 +8,7 @@ use App\Shared\Domain\Criteria\Specification;
 use App\Shared\Domain\Entity;
 use App\Shared\Infrastructure\Mapper\EntityToModelMapper;
 use App\Shared\Infrastructure\Mapper\ModelToEntityMapper;
+use Ramsey\Uuid\UuidInterface;
 use ReflectionException;
 use Tempest\Database\Builder\ModelDefinition;
 use Tempest\Database\Builder\ModelQueryBuilder;
@@ -48,9 +49,20 @@ abstract readonly class TempestRepository
     /**
      * @throws ReflectionException
      */
-    protected function entityExists(Specification $specification): bool
+    protected function findEntity(UuidInterface $uuid): ?Entity
     {
-        return !is_null($this->findOneBy($specification));
+        $record = $this
+            ->query()
+            ->whereField('uuid', (string)$uuid)
+            ->limit(1)
+            ->first();
+
+        return $this
+            ->modelToEntityMapper
+            ->map(
+                $record,
+                $this->getModelClassName()::getEntityClassName()
+            );
     }
 
     /**
@@ -71,17 +83,14 @@ abstract readonly class TempestRepository
             ->all();
 
         return array_map(
-            fn(TempestModel $model): Entity => $this->mapModelToEntity($model),
+            fn(TempestModel $model): Entity => $this
+                ->modelToEntityMapper
+                ->map(
+                    $model,
+                    $this->getModelClassName()::getEntityClassName()
+                ),
             $records
         );
-    }
-
-    /**
-     * @throws ReflectionException
-     */
-    public function findOneEntityBy(Specification $specification): ?Entity
-    {
-        return $this->findEntitiesBy($specification)[0] ?? null;
     }
 
     /**

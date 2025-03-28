@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\City\Infrastructure\Database;
 
 use App\City\Domain\City;
+use App\City\Domain\CityNotFoundException;
 use App\City\Domain\CityRepository;
 use App\City\Domain\CitySpecification;
 use App\Shared\Infrastructure\Database\TempestRepository;
@@ -23,12 +24,24 @@ final readonly class TempestCityRepository extends TempestRepository implements 
      */
     public function exists(CitySpecification $specification): bool
     {
-        return $this->entityExists($specification);
+        return !is_null($this->firstBy($specification));
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function find(UuidInterface $uuid): ?City
     {
-        return null;
+        return $this->findEntity($uuid);
+    }
+
+    /**
+     * @throws CityNotFoundException
+     * @throws ReflectionException
+     */
+    public function findOrFail(UuidInterface $uuid): City
+    {
+        return $this->find($uuid) ?? throw new CityNotFoundException($uuid);
     }
 
     /**
@@ -45,9 +58,9 @@ final readonly class TempestCityRepository extends TempestRepository implements 
      * @throws ReflectionException
      */
 
-    public function findOneBy(CitySpecification $specification): ?City
+    public function firstBy(CitySpecification $specification): ?City
     {
-        return $this->findOneEntityBy($specification);
+        return $this->findEntitiesBy($specification)[0] ?? null;
     }
 
     /**

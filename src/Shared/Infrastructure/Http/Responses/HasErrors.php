@@ -22,25 +22,27 @@ trait HasErrors
         return $this->throwable->getMessage();
     }
 
-    public function setErrorInformation(bool $isDebug = false): self
+    public function setErrorInformation(Throwable $throwable, bool $isDebug = false): self
     {
+        $this->throwable = $throwable;
+
         $this->body = [
             ...($this->body ?? []),
-            ...$this->getContextualInformationFromException($isDebug)
+            ...$this->getContextualInformationFromException($throwable, $isDebug)
         ];
 
         return $this;
     }
 
-    private function getContextualInformationFromException(bool $isDebug): array
+    private function getContextualInformationFromException(Throwable $throwable, bool $isDebug): array
     {
         return !$isDebug ? ['message' => $this->getGenericErrorMessage()] :
             [
-                'message' => $this->throwable->getMessage(),
-                'code' => $this->throwable->getCode(),
-                'file' => $this->throwable->getFile(),
-                'line' => $this->throwable->getLine(),
-                'trace' => arr($this->throwable->getTrace())
+                'message' => $throwable->getMessage(),
+                'code' => $throwable->getCode(),
+                'file' => $throwable->getFile(),
+                'line' => $throwable->getLine(),
+                'trace' => arr($throwable->getTrace())
                     ->filter(fn (array $trace): bool => array_key_exists('file', $trace))
                     ->map(fn (array $trace): array => array_diff_key($trace, array_flip(['args'])))
                     ->values()

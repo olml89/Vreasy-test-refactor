@@ -9,7 +9,7 @@ use App\Shared\Domain\Criteria\CompositeExpression\OrExpression;
 use App\Shared\Domain\Criteria\Criteria;
 use App\Shared\Domain\Criteria\Filter\EqualTo;
 
-final readonly class CityAlreadyExistsSpecification implements CitySpecification
+final readonly class DuplicatedCitySpecification implements CitySpecification
 {
     public function __construct(
         private CityName $name,

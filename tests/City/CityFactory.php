@@ -11,7 +11,7 @@ use Ramsey\Uuid\Uuid;
 
 final class CityFactory
 {
-    public static function create(string $name, float $latitude, float $longitude): City
+    public static function create(string $name = 'Test City', float $latitude = -2.45, float $longitude = 18.54): City
     {
         return new City(
             uuid: Uuid::uuid4(),

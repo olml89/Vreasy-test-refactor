@@ -9,4 +9,5 @@ use Ramsey\Uuid\UuidInterface;
 interface UuidGenerator
 {
     public function random(): UuidInterface;
+    public function fromString(string $uuid): UuidInterface;
 }

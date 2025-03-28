@@ -11,11 +11,10 @@ final class Conflict extends JsonResponse implements ErrorJsonResponse
 {
     use HasErrors;
 
-    public function __construct(DuplicatedEntityException $duplicatedEntityException, bool $isDebug)
+    public function __construct(DuplicatedEntityException $throwable, bool $isDebug)
     {
         parent::__construct(Status::CONFLICT);
-        $this->throwable = $duplicatedEntityException;
 
-        $this->setErrorInformation($isDebug);
+        $this->setErrorInformation($throwable, $isDebug);
     }
 }
