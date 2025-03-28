@@ -63,6 +63,11 @@ final readonly class TempestCityRepository extends TempestRepository implements 
         return $this->findEntitiesBy($specification)[0] ?? null;
     }
 
+    public function remove(City $city): void
+    {
+        $this->removeEntity($city);
+    }
+
     /**
      * @throws ReflectionException
      */

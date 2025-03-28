@@ -46,21 +46,24 @@ abstract readonly class TempestRepository
         return $this->getModelClassName()::query();
     }
 
+    private function findModel(UuidInterface $uuid): ?TempestModel
+    {
+        return $this
+            ->query()
+            ->whereField('uuid', (string)$uuid)
+            ->limit(1)
+            ->first();
+    }
+
     /**
      * @throws ReflectionException
      */
     protected function findEntity(UuidInterface $uuid): ?Entity
     {
-        $record = $this
-            ->query()
-            ->whereField('uuid', (string)$uuid)
-            ->limit(1)
-            ->first();
-
         return $this
             ->modelToEntityMapper
             ->map(
-                $record,
+                $this->findModel($uuid),
                 $this->getModelClassName()::getEntityClassName()
             );
     }
@@ -91,6 +94,11 @@ abstract readonly class TempestRepository
                 ),
             $records
         );
+    }
+
+    public function removeEntity(Entity $entity): void
+    {
+        $this->findModel($entity->uuid)?->delete();
     }
 
     /**

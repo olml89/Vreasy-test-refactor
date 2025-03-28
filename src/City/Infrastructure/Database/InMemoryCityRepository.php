@@ -29,7 +29,7 @@ final class InMemoryCityRepository implements CityRepository
 
     public function find(UuidInterface $uuid): ?City
     {
-        return $this->cities[$uuid->toString()] ?? null;
+        return $this->cities[(string)$uuid] ?? null;
     }
 
     /**
@@ -53,8 +53,13 @@ final class InMemoryCityRepository implements CityRepository
         return array_find($this->cities, fn(City $city): bool => $specification->isSatisfiedBy($city));
     }
 
+    public function remove(City $city): void
+    {
+        unset($this->cities[(string)$city->uuid]);
+    }
+
     public function save(City $city): void
     {
-        $this->cities[$city->uuid->__toString()] = $city;
+        $this->cities[(string)$city->uuid] = $city;
     }
 }

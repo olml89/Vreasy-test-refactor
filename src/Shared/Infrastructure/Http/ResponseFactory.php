@@ -9,6 +9,7 @@ use App\Shared\Domain\DuplicatedEntityException;
 use App\Shared\Domain\EntityNotFoundException;
 use App\Shared\Infrastructure\Http\Responses\Conflict;
 use App\Shared\Infrastructure\Http\Responses\Created;
+use App\Shared\Infrastructure\Http\Responses\NoContent;
 use App\Shared\Infrastructure\Http\Responses\NotFound;
 use App\Shared\Infrastructure\Http\Responses\Ok;
 use App\Shared\Infrastructure\Http\Responses\ServerError;
@@ -34,6 +35,11 @@ final readonly class ResponseFactory
     public function created(Entity $entity): Created
     {
         return new Created($this->presenterFactory->present($entity));
+    }
+
+    public function noContent(): NoContent
+    {
+        return new NoContent();
     }
 
     public function notFound(EntityNotFoundException $exception): NotFound

@@ -24,5 +24,7 @@ interface CityRepository
 
     public function firstBy(CitySpecification $specification): ?City;
 
+    public function remove(City $city): void;
+
     public function save(City $city): void;
 }

@@ -17,13 +17,13 @@ trait TestsApiEndpoint
     {
         $response->assertStatus($status);
 
-        if (!is_null($body)) {
-            $this->assertArrayIsEqualToArrayOnlyConsideringListOfKeys(
+        is_null($body)
+            ? $this->assertNull($response->body)
+            : $this->assertArrayIsEqualToArrayOnlyConsideringListOfKeys(
                 expected: $body,
                 actual: $response->body['data'],
                 keysToBeConsidered: array_keys($body),
             );
-        }
 
         return $this;
     }
